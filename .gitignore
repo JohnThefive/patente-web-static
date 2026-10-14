@@ -1,0 +1,79 @@
+# ==============================================================================
+# 1. PYTHON & FASTAPI (BACKEND)
+# ==============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Ambientes virtuais
+.venv/
+venv/
+
+
+# Caches de testes, tipagem e linters
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Bancos de dados locais de desenvolvimento
+*.db
+*.sqlite
+*.sqlite3
+
+# ==============================================================================
+# 2. REACT, VITE & NODE.JS (FRONTEND)
+# ==============================================================================
+node_modules/
+dist/
+dist-ssr/
+build/
+*.local
+.npm
+.eslintcache
+*.tsbuildinfo
+
+# ==============================================================================
+# 3. VARIÁVEIS DE AMBIENTE E SEGREDOS
+# ==============================================================================
+.env
+.env.*
+!.env.example
+
+# ==============================================================================
+# 4. PROTEÇÃO DE PROPRIEDADE INTELECTUAL & ARQUIVOS TEMPORÁRIOS WORD/INPI
+# ==============================================================================
+# Ignora arquivos de lock/temporários que o LibreOffice criam ao abrir um .docx
+~$*.docx
+~$*.doc
+.~lock.*
+
+# Ignora pacotes e minutas geradas em testes locais para nunca vazar patentes no Git
+Pacote_Minutas_*.zip
+minuta_patente_*.docx
+rascunho_patente_*.json
+figuras_temp/
+inpi_ephemeral_*/
+patente_ephemeral_*/
+output/
+outputs/
+
+# GARANTE que os templates oficiais em branco do laboratório NÃO sejam ignorados
+!backend/templates/**/*.docx
+
+# ==============================================================================
+# 5. SISTEMA OPERACIONAL E EDITORES (LINUX / WINDOWS / VSCODE)
+# ==============================================================================
+.DS_Store
+Thumbs.db
+*~
+
+# VS Code (ignora configurações locais da máquina, mas permite extensões recomendadas)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/

@@ -1,0 +1,14 @@
+# backend/requirements.txt
+
+# Framework web assíncrono com geração automática de documentação OpenAPI (Swagger)
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+
+# Validação de dados e serialização de alta performance (escrita em Rust)
+pydantic==2.9.2
+
+# Motor de templates Word (.docx) baseado em Jinja2 (preserva formatação do INPI)
+docxtpl==0.18.0
+
+# Driver assíncrono de banco de dados (SQLite em dev / PostgreSQL em produção)
+sqlalchemy==2.0.35
