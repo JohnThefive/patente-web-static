@@ -77,3 +77,7 @@ Thumbs.db
 !.vscode/launch.json
 !.vscode/extensions.json
 .idea/
+
+
+# arquivos especificos: 
+002-rotas-da-api.md
