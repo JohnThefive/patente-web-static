@@ -155,18 +155,38 @@ class RelatorioDescritivoMU(BaseModel):
 
     titulo: str = Field(
         ...,
-        min_length=10,
+        min_length=5,
         description="Título do modelo (ex: DISPOSIÇÃO CONSTRUTIVA EM SUPORTE ARTICULADO)",
     )
-    campo_do_modelo: str = Field(..., min_length=10)
-    estado_da_tecnica: str = Field(..., min_length=10)
-    melhoria_funcional: str = Field(..., min_length=10)
-    desenhos: List[DesenhoItem] = Field(
-        ...,
-        min_length=1,
-        description="Desenhos são indispensáveis em MU (Art. 9º LPI)",
+    campo_modelo_de_utilidade: Optional[str] = Field(
+        default="",
+        description="Campo do modelo de utilidade",
     )
-    paragrafos_descricao: List[str] = Field(default_factory=list)
+    campo_do_modelo: Optional[str] = Field(
+        default="",
+        description="Alias retrocompatível para campo_modelo_de_utilidade",
+    )
+    breve_descricao_desenhos: Optional[str] = Field(
+        default="",
+        description="Breve descrição dos desenhos",
+    )
+    estado_da_tecnica: Optional[str] = Field(default="")
+    melhoria_funcional: Optional[str] = Field(default="")
+    estado_da_tecnica_utilidade: Optional[str] = Field(default="")
+    problema_e_vantagens_utilidade: Optional[str] = Field(default="")
+    desenhos: List[DesenhoItem] = Field(
+        default_factory=list,
+        description="Figuras técnicas do modelo de utilidade",
+    )
+    paragrafos_descricao: List[str] = Field(
+        default_factory=list,
+        description="Descrição do modelo de utilidade",
+    )
+    exemplos_concretizacao_MU: Optional[str] = Field(
+        default="",
+        description="Exemplos de concretizações do modelo de utilidade",
+    )
+    exemplos_concretizacao: Optional[str] = Field(default="")
 
 
 class RelatorioDescritivoSoftwareCII(RelatorioDescritivoPI):
@@ -205,7 +225,7 @@ class PatenteMUCompleta(BaseModel):
     modalidade: Literal["MU"] = "MU"
     relatorio: RelatorioDescritivoMU
     quadro_reivindicatorio: List[ReivindicacaoItem] = Field(..., min_length=1)
-    desenhos: List[DesenhoItem] = Field(..., min_length=1)
+    desenhos: List[DesenhoItem] = Field(default_factory=list)
     resumo: ResumoPI
 
 

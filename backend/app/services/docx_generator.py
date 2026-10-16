@@ -141,8 +141,30 @@ def gerar_relatorio_pi_ram(dados: RelatorioDescritivoPI, tipo_header: str = "Pat
 
 def gerar_relatorio_mu_ram(dados: RelatorioDescritivoMU) -> bytes:
     doc = DocxTemplate(str(TEMPLATE_RELATORIO_MU))
+    relatorio_dict = dados.model_dump()
+
+    # Mapeamento e normalização das variáveis esperadas pelo template Word
+    campo_val = dados.campo_modelo_de_utilidade or dados.campo_do_modelo or ""
+    relatorio_dict["campo_modelo_de_utilidade"] = campo_val
+    relatorio_dict["campo_do_modelo"] = campo_val
+
+    exemplos_val = dados.exemplos_concretizacao_MU or dados.exemplos_concretizacao or ""
+    relatorio_dict["exemplos_concretizacao_MU"] = exemplos_val
+    relatorio_dict["exemplos_concretizacao"] = exemplos_val
+
+    # Fundamentos (se não fornecidos, deixa espaço limpo sem erro)
+    relatorio_dict["estado_da_tecnica_utilidade"] = dados.estado_da_tecnica_utilidade or dados.estado_da_tecnica or ""
+    relatorio_dict["problema_e_vantagens_utilidade"] = dados.problema_e_vantagens_utilidade or dados.melhoria_funcional or ""
+
+    # Se breve_descricao_desenhos foi preenchida em texto livre e a lista de desenhos não tem itens com descricao_breve
+    if dados.breve_descricao_desenhos and not any(d.descricao_breve for d in dados.desenhos):
+        relatorio_dict["desenhos"] = [{
+            "numero_figura": "1",
+            "descricao_breve": dados.breve_descricao_desenhos
+        }]
+
     contexto = {
-        "relatorio": dados.model_dump(),
+        "relatorio": relatorio_dict,
         "header_title": formatar_header("Modelo de Utilidade", dados.titulo, default="Relatório Descritivo - MU"),
     }
     doc.render(contexto)

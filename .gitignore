@@ -81,3 +81,47 @@ Thumbs.db
 
 # arquivos especificos: 
 002-rotas-da-api.md
+
+
+# Dependências (nunca devem ir para o repositório)
+node_modules/
+frontend/node_modules/
+.pnp
+.pnp.js
+
+# Build de produção do Vite
+dist/
+frontend/dist/
+dist-ssr/
+*.local
+
+# Logs de erro e execução de gerenciadores de pacote
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Variáveis de ambiente (podem conter credenciais ou URLs locais)
+
+frontend/.env
+frontend/.env.local
+
+# Cache e testes
+coverage/
+.turbo/
+.parcel-cache/
+
+# Configurações locais 
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Arquivos de sistema operacional
+.DS_Store
+Thumbs.db
