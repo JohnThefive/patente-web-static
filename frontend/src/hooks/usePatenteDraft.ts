@@ -5,11 +5,26 @@ import {
     PacotePatentePayload,
     ModalidadePatente,
     RelatorioDescritivoPI,
-    RelatorioDescritivoMU
+    RelatorioDescritivoMU,
+    RegistroSoftwareRPCDraft
 } from "../features/patentes/types/TiposPatentes";
 import { useDebounce } from "./useDebounce";
 
 const IDB_KEY_RASCUNHO = "patente_draft_v1";
+
+export const RASCUNHO_RPC_PADRAO: RegistroSoftwareRPCDraft = {
+    hash_resumo: "",
+    nome_arquivo_hash: "",
+    numero_gru: "",
+    numero_protocolo: "",
+    gru_emitida: false,
+    gru_paga: false,
+    hash_gerado: false,
+    dv_assinada_govbr: false,
+    procuracao_aplicavel: false,
+    pedido_protocolado: false,
+    rpi_acompanhada: false
+};
 
 export const RASCUNHO_PADRAO: PacotePatentePayload = {
     modalidade: "PI",
@@ -37,8 +52,33 @@ export const RASCUNHO_PADRAO: PacotePatentePayload = {
     resumo: {
         titulo: "",
         texto: ""
-    }
+    },
+    rpc: RASCUNHO_RPC_PADRAO
 };
+
+function normalizarRascunhoSalvo(dados: Partial<PacotePatentePayload>): PacotePatentePayload {
+    const rpcBruto = (dados.rpc || {}) as any;
+    const checklistLegado = rpcBruto.checklist || {};
+    const softwareLegado = rpcBruto.dados_software || {};
+
+    return {
+        ...RASCUNHO_PADRAO,
+        ...dados,
+        rpc: {
+            hash_resumo: rpcBruto.hash_resumo ?? softwareLegado.hash_resumo ?? "",
+            nome_arquivo_hash: rpcBruto.nome_arquivo_hash ?? softwareLegado.nome_arquivo_hash ?? "",
+            numero_gru: rpcBruto.numero_gru ?? checklistLegado.numero_gru ?? "",
+            numero_protocolo: rpcBruto.numero_protocolo ?? checklistLegado.numero_protocolo ?? "",
+            gru_emitida: Boolean(rpcBruto.gru_emitida ?? checklistLegado.gru_emitida),
+            gru_paga: Boolean(rpcBruto.gru_paga ?? checklistLegado.gru_paga),
+            hash_gerado: Boolean(rpcBruto.hash_gerado ?? checklistLegado.hash_gerado),
+            dv_assinada_govbr: Boolean(rpcBruto.dv_assinada_govbr ?? checklistLegado.dv_assinada_govbr),
+            procuracao_aplicavel: Boolean(rpcBruto.procuracao_aplicavel ?? checklistLegado.procuracao_aplicavel),
+            pedido_protocolado: Boolean(rpcBruto.pedido_protocolado ?? checklistLegado.pedido_protocolado),
+            rpi_acompanhada: Boolean(rpcBruto.rpi_acompanhada ?? checklistLegado.rpi_acompanhada)
+        }
+    };
+}
 
 export type StatusPersistencia = "carregando" | "salvo" | "salvando" | "erro";
 
@@ -48,14 +88,14 @@ export function usePatenteDraft() {
     const [ultimoSalvamento, setUltimoSalvamento] = useState<Date | null>(null);
     const isCarregadoRef = useRef(false);
 
-    // Carrega o rascunho do IndexedDB na inicialização
+    // Carrega o rascunho do IndexedDB na inicialização (retrocompatível com versões anteriores)
     useEffect(() => {
         let isMounted = true;
-        get<PacotePatentePayload>(IDB_KEY_RASCUNHO)
+        get<Partial<PacotePatentePayload>>(IDB_KEY_RASCUNHO)
             .then((dadosSalvos) => {
                 if (!isMounted) return;
                 if (dadosSalvos) {
-                    setRascunho(dadosSalvos);
+                    setRascunho(normalizarRascunhoSalvo(dadosSalvos));
                 }
                 isCarregadoRef.current = true;
                 setStatusPersistencia("salvo");
@@ -92,15 +132,27 @@ export function usePatenteDraft() {
             });
     }, [rascunhoDebounced]);
 
-    // Atualiza a modalidade ajustando o payload conforme necessário
+    // Atualiza a modalidade preservando os dados preenchidos
     const alterarModalidade = useCallback((novaModalidade: ModalidadePatente) => {
         setRascunho((anterior) => {
             if (anterior.modalidade === novaModalidade) return anterior;
 
+            if (novaModalidade === "RPC") {
+                return {
+                    ...anterior,
+                    modalidade: "RPC"
+                };
+            }
+
             if (novaModalidade === "MU") {
                 const relatorioAtual = anterior.relatorio as any;
-                const campoVal = relatorioAtual.campo_modelo_de_utilidade || relatorioAtual.campo_do_modelo || relatorioAtual.campo_da_invencao || "";
-                const exemplosVal = relatorioAtual.exemplos_concretizacao_MU || relatorioAtual.exemplos_concretizacao || "";
+                const campoVal =
+                    relatorioAtual.campo_modelo_de_utilidade ||
+                    relatorioAtual.campo_do_modelo ||
+                    relatorioAtual.campo_da_invencao ||
+                    "";
+                const exemplosVal =
+                    relatorioAtual.exemplos_concretizacao_MU || relatorioAtual.exemplos_concretizacao || "";
 
                 const novoRelatorioMU: RelatorioDescritivoMU = {
                     titulo: relatorioAtual.titulo || "",
@@ -120,8 +172,13 @@ export function usePatenteDraft() {
             } else {
                 // PI ou CII_SOFTWARE
                 const relatorioAtual = anterior.relatorio as any;
-                const campoVal = relatorioAtual.campo_da_invencao || relatorioAtual.campo_modelo_de_utilidade || relatorioAtual.campo_do_modelo || "";
-                const exemplosVal = relatorioAtual.exemplos_concretizacao || relatorioAtual.exemplos_concretizacao_MU || "";
+                const campoVal =
+                    relatorioAtual.campo_da_invencao ||
+                    relatorioAtual.campo_modelo_de_utilidade ||
+                    relatorioAtual.campo_do_modelo ||
+                    "";
+                const exemplosVal =
+                    relatorioAtual.exemplos_concretizacao || relatorioAtual.exemplos_concretizacao_MU || "";
 
                 const novoRelatorioPI: RelatorioDescritivoPI = {
                     titulo: relatorioAtual.titulo || "",
@@ -157,7 +214,7 @@ export function usePatenteDraft() {
         const jsonString = JSON.stringify(rascunhoSemImagens, null, 2);
         const blob = new Blob([jsonString], { type: "application/json;charset=utf-8" });
         const dataStr = new Date().toISOString().slice(0, 10);
-        saveAs(blob, `Rascunho_Patente_${rascunho.modalidade}_${dataStr}.json`);
+        saveAs(blob, `Rascunho_INPI_${rascunho.modalidade}_${dataStr}.json`);
     }, [rascunho]);
 
     // Importa um rascunho de arquivo JSON
@@ -167,12 +224,13 @@ export function usePatenteDraft() {
             reader.onload = async (event) => {
                 try {
                     const conteudo = event.target?.result as string;
-                    const dados = JSON.parse(conteudo) as PacotePatentePayload;
-                    if (!dados.modalidade || !dados.relatorio || !dados.quadro_reivindicatorio) {
+                    const dados = JSON.parse(conteudo) as Partial<PacotePatentePayload>;
+                    if (!dados.modalidade) {
                         throw new Error("Arquivo JSON inválido ou incompatível com o formato de rascunho.");
                     }
-                    setRascunho(dados);
-                    await set(IDB_KEY_RASCUNHO, dados);
+                    const normalizado = normalizarRascunhoSalvo(dados);
+                    setRascunho(normalizado);
+                    await set(IDB_KEY_RASCUNHO, normalizado);
                     setStatusPersistencia("salvo");
                     setUltimoSalvamento(new Date());
                     resolve();
@@ -193,11 +251,39 @@ export function usePatenteDraft() {
         setUltimoSalvamento(new Date());
     }, []);
 
-    // Preenche com o exemplo de teste completo
+    // Preenche com o exemplo de teste completo respeitando a modalidade atualmente selecionada
     const carregarExemploTeste = useCallback(async () => {
         const { EXEMPLO_TESTE_PATENTE } = await import("../features/patentes/data/exemploTeste");
-        setRascunho(EXEMPLO_TESTE_PATENTE);
-        await set(IDB_KEY_RASCUNHO, EXEMPLO_TESTE_PATENTE);
+        setRascunho((atual) => {
+            const modalidadeAtiva = atual.modalidade;
+            let novoExemplo: PacotePatentePayload = {
+                ...EXEMPLO_TESTE_PATENTE,
+                modalidade: modalidadeAtiva
+            };
+
+            if (modalidadeAtiva === "MU") {
+                novoExemplo = {
+                    ...novoExemplo,
+                    relatorio: {
+                        titulo: "DISPOSIÇÃO CONSTRUTIVA INTRODUZIDA EM SUPORTE ARTICULADO PARA SENSORES",
+                        campo_modelo_de_utilidade:
+                            "O presente modelo de utilidade refere-se ao setor de dispositivos mecânicos de fixação e suporte para instrumentação em campo.",
+                        campo_do_modelo:
+                            "O presente modelo de utilidade refere-se ao setor de dispositivos mecânicos de fixação e suporte para instrumentação em campo.",
+                        breve_descricao_desenhos:
+                            "A Figura 1 ilustra uma vista em perspectiva isométrica do suporte articulado.",
+                        paragrafos_descricao: EXEMPLO_TESTE_PATENTE.relatorio.paragrafos_descricao,
+                        exemplos_concretizacao_MU:
+                            "Em uma concretização preferencial, o suporte é injetado em polímero ABS com pino elástico de travamento rápido.",
+                        exemplos_concretizacao:
+                            "Em uma concretização preferencial, o suporte é injetado em polímero ABS com pino elástico de travamento rápido."
+                    }
+                };
+            }
+
+            set(IDB_KEY_RASCUNHO, novoExemplo).catch(console.error);
+            return novoExemplo;
+        });
         setStatusPersistencia("salvo");
         setUltimoSalvamento(new Date());
     }, []);

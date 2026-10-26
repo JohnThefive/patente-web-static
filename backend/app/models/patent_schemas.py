@@ -1,14 +1,17 @@
 # backend/app/models/patent_schemas.py
 """
-Módulo de Modelagem e Validação de Dados de Patentes (Padrão INPI).
+Módulo de Modelagem e Validação de Dados de Patentes e Software (Padrão INPI).
 
-Baseado nas regras da IN 30/2013 e Portaria 14/2024 do INPI, suportando:
+Baseado nas regras da IN 30/2013, Portaria 14/2024, Resolução 158/2016 e Lei 9.609/98, suportando:
 - Patente de Invenção (PI)
 - Modelo de Utilidade (MU)
-- Invenção Implementada por Computador / Software e Jogos (CII_SOFTWARE)
+- Invenção Implementada por Computador / Software com Hardware (CII_SOFTWARE)
+- Registro de Programa de Computador / e-RPC (RPC)
 """
 
 import base64
+from datetime import date
+import re
 from typing import Annotated, List, Literal, Optional, Union
 from pydantic import BaseModel, Field, computed_field, field_validator, model_validator
 
@@ -230,7 +233,7 @@ class PatenteMUCompleta(BaseModel):
 
 
 class PatenteSoftwareCIICompleta(BaseModel):
-    """Pacote completo para Invenção Implementada por Software / Jogos Digitais."""
+    """Pacote completo para Invenção Implementada por Computador (CII - Resolução 158/2016)."""
 
     modalidade: Literal["CII_SOFTWARE"] = "CII_SOFTWARE"
     relatorio: RelatorioDescritivoSoftwareCII

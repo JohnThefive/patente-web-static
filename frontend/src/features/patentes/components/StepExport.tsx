@@ -24,6 +24,7 @@ export const StepExport: React.FC<StepExportProps> = ({ payload }) => {
     const [statusMensagem, setStatusMensagem] = useState<{ tipo: "sucesso" | "erro"; texto: string } | null>(null);
 
     const isMU = payload.modalidade === "MU";
+    const isCII = payload.modalidade === "CII_SOFTWARE";
     const resumoTexto = (payload.resumo.texto || "").trim();
     const contagemPalavrasResumo = resumoTexto ? resumoTexto.split(/\s+/).filter(Boolean).length : 0;
     const isResumoValido = contagemPalavrasResumo >= 50 && contagemPalavrasResumo <= 200;
@@ -32,6 +33,24 @@ export const StepExport: React.FC<StepExportProps> = ({ payload }) => {
     const avisosPendencias: string[] = [];
     if (!payload.relatorio.titulo || payload.relatorio.titulo.trim().length < 5) {
         avisosPendencias.push("O título do relatório descritivo deve conter no mínimo 5 caracteres.");
+    }
+    if (isCII) {
+        const efeito = ((payload.relatorio as any).efeito_tecnico_alcancado || "").trim();
+        if (efeito.length < 15) {
+            avisosPendencias.push(
+                "Para Patente de Software/CII (Resolução 158/2016), o campo 'Efeito Técnico Alcançado' exige no mínimo 15 caracteres."
+            );
+        }
+        if (!payload.desenhos || payload.desenhos.length === 0) {
+            avisosPendencias.push(
+                "Para Patente de Software/CII, adicione ao menos 1 figura (ex: fluxograma ou diagrama em blocos da arquitetura)."
+            );
+        }
+    }
+    if (isMU && (!payload.desenhos || payload.desenhos.length === 0)) {
+        avisosPendencias.push(
+            "Para Modelo de Utilidade (Art. 9º da LPI), é recomendada a inclusão de ao menos 1 figura técnica."
+        );
     }
     if (!payload.quadro_reivindicatorio || payload.quadro_reivindicatorio.length === 0) {
         avisosPendencias.push("O quadro reivindicatório deve possuir ao menos 1 reivindicação.");
@@ -61,6 +80,12 @@ export const StepExport: React.FC<StepExportProps> = ({ payload }) => {
         }
     };
 
+    const nomeModalidade = isMU
+        ? "Modelo de Utilidade (MU)"
+        : isCII
+        ? "Patente CII (Software + Hardware)"
+        : "Patente de Invenção (PI)";
+
     return (
         <div className="step-card">
             <div className="step-card-header">
@@ -81,7 +106,7 @@ export const StepExport: React.FC<StepExportProps> = ({ payload }) => {
                         <span>Relatório Descritivo</span>
                     </div>
                     <p style={{ fontSize: "0.85rem", color: "var(--color-text-main)" }}>
-                        <strong>Modalidade:</strong> {isMU ? "Modelo de Utilidade (MU)" : "Patente de Invenção (PI)"}
+                        <strong>Modalidade:</strong> {nomeModalidade}
                     </p>
                     <p style={{ fontSize: "0.85rem", color: "var(--color-text-muted)" }}>
                         {payload.relatorio.paragrafos_descricao?.length || 0} parágrafo(s) de descrição

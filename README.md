@@ -42,14 +42,20 @@ O sistema compila e entrega um pacote compactado contendo as 4 peças formais pr
 
 ---
 
-## 🧭 O Wizard de 6 Etapas
+## 🧭 O Wizard Dinâmico de 6 Etapas
 
-1. **Modalidade:** Seleção guiada entre Patente de Invenção (PI), Modelo de Utilidade (MU) e Software/CII (Em breve).
-2. **Relatório Descritivo:** Formulários dinâmicos com seções exclusivas para cada modalidade (ex: Campo do Modelo, Breve Descrição dos Desenhos e Exemplos para MU).
+### Fluxo A — Patentes (`PI`, `MU` e `CII_SOFTWARE`)
+1. **Modalidade & Triagem:** Seleção guiada entre Patente de Invenção (PI), Modelo de Utilidade (MU) e Software (com triagem automática entre Registro e-RPC e Patente CII).
+2. **Relatório Descritivo:** Formulários dinâmicos com seções exclusivas para cada modalidade (incluindo *Efeito Técnico Alcançado* e *Arquitetura de Execução* para CII conforme Resolução INPI nº 158/2016).
 3. **Quadro Reivindicatório:** Gerenciador com suporte a reivindicações dependentes e independentes, reordenação automática e visualização do texto formatado.
 4. **Desenhos Técnicos:** Upload e pré-visualização de imagens (PNG/JPEG) com breve descrição técnica.
 5. **Resumo Formal:** Editor com contador de palavras em tempo real alertando o cumprimento da meta legal (50 a 200 palavras).
 6. **Exportação:** Painel de revisão geral, checklist de pendências e botão de download do pacote `.zip`.
+
+### Fluxo B — Registro de Programa de Computador (`RPC` / e-RPC — Lei nº 9.609/98 — 3 Passos Enxutos)
+1. **Modalidade, Triagem & Dicas Jurídicas:** Triagem da natureza da obra (Software Puro vs. Inovação CII), guia prático sobre taxa atual (**R$ 210,00** na GRU Código 730), emissão automática da Declaração de Veracidade pela plataforma do governo (assinada via Gov.br), direitos morais/patrimoniais e proteção complementar de layout via Desenho Industrial (DI).
+2. **Gerador e Validador de Resumo Hash SHA-512:** Cálculo criptográfico 100% local no navegador via *Web Crypto API* (sem envio do código-fonte ao servidor) e validação estrita de 128 caracteres hexadecimais com bloqueio de caracteres inválidos.
+3. **Checklist de Registro no INPI:** Controle interativo de etapas (emissão e pagamento prévio da GRU de R$ 210,00, assinatura digital da Declaração de Veracidade pelo Gov.br, preenchimento no e-RPC e acompanhamento na Revista RPI), com bloqueio numérico para o número da GRU e painel rápido para copiar o Hash SHA-512.
 
 ---
 
@@ -108,6 +114,7 @@ As decisões de engenharia e segurança estão documentadas na pasta [`docs/adr/
 
 * **[ADR 001](docs/adr/001-arquitetura-local-first-zero-storage.md):** Adoção de Arquitetura Local-First (IndexedDB) e Geração Efêmera (Zero-Storage).
 * **[ADR 002](docs/adr/002-rotas-da-api.md):** Documentação das Rotas da API e especificações dos Payloads JSON.
+* **[Guia e-RPC & Criptografia Hash](docs/guia-registro-software-e-hash.md):** Guia completo sobre o Registro de Software no INPI, processo legal, Web Crypto API e requisitos de segurança (RNF01 a RNF04).
 
 ---
 

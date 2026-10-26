@@ -1,5 +1,16 @@
 import React from "react";
-import { Check, FileText, ListOrdered, Image, Award, Settings, Download } from "lucide-react";
+import {
+    Check,
+    FileText,
+    ListOrdered,
+    Image,
+    Award,
+    Settings,
+    Download,
+    Fingerprint,
+    ClipboardCheck
+} from "lucide-react";
+import { ModalidadePatente } from "../types/TiposPatentes";
 
 export interface StepItem {
     id: number;
@@ -8,11 +19,11 @@ export interface StepItem {
     icone: React.ComponentType<{ size?: number; className?: string }>;
 }
 
-export const ETAPAS_WIZARD: StepItem[] = [
+export const ETAPAS_WIZARD_PATENTE: StepItem[] = [
     {
         id: 1,
         titulo: "Modalidade",
-        subtitulo: "Tipo de Patente",
+        subtitulo: "Tipo de Proteção",
         icone: Settings
     },
     {
@@ -47,18 +58,43 @@ export const ETAPAS_WIZARD: StepItem[] = [
     }
 ];
 
+export const ETAPAS_WIZARD_RPC: StepItem[] = [
+    {
+        id: 1,
+        titulo: "Modalidade & Dicas",
+        subtitulo: "Triagem e Guia Legal",
+        icone: Settings
+    },
+    {
+        id: 2,
+        titulo: "Gerador de Hash",
+        subtitulo: "SHA-512 (128 hex)",
+        icone: Fingerprint
+    },
+    {
+        id: 3,
+        titulo: "Checklist INPI",
+        subtitulo: "GRU R$ 210, Gov.br e RPI",
+        icone: ClipboardCheck
+    }
+];
+
 interface WizardStepperProps {
     etapaAtual: number;
+    modalidade?: ModalidadePatente;
     onSelecionarEtapa: (etapa: number) => void;
 }
 
 export const WizardStepper: React.FC<WizardStepperProps> = ({
     etapaAtual,
+    modalidade = "PI",
     onSelecionarEtapa
 }) => {
+    const etapas = modalidade === "RPC" ? ETAPAS_WIZARD_RPC : ETAPAS_WIZARD_PATENTE;
+
     return (
-        <nav className="stepper-nav" aria-label="Etapas do Pedido de Patente">
-            {ETAPAS_WIZARD.map((etapa) => {
+        <nav className="stepper-nav" aria-label="Etapas do Pedido no INPI">
+            {etapas.map((etapa) => {
                 const isActive = etapa.id === etapaAtual;
                 const isCompleted = etapa.id < etapaAtual;
                 const IconeComponent = etapa.icone;

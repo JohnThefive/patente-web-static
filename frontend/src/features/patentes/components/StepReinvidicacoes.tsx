@@ -26,7 +26,6 @@ export const StepReinvidicacoes: React.FC<StepReinvidicacoesProps> = ({
     const handleRemover = (index: number) => {
         if (reivindicacoes.length <= 1) return;
         const filtradas = reivindicacoes.filter((_, i) => i !== index);
-        // Renumera as reivindicações subsequentes para manter sequência 1, 2, 3...
         const renumeradas: ReivindicacaoItem[] = filtradas.map((r, i) => {
             const numeroAtual = i + 1;
             let dependencia = r.dependencia;
@@ -94,6 +93,8 @@ export const StepReinvidicacoes: React.FC<StepReinvidicacoesProps> = ({
             <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
                 {reivindicacoes.map((item, index) => {
                     const isPrimeira = item.numero === 1;
+                    const preambuloValido = item.preambulo.trim().length >= 3;
+                    const caracValida = item.caracterizacao.trim().length >= 5;
 
                     return (
                         <div key={index} className="reivindicacao-card">
@@ -172,12 +173,28 @@ export const StepReinvidicacoes: React.FC<StepReinvidicacoesProps> = ({
                             {/* Preâmbulo */}
                             <div className="form-group">
                                 <label className="form-label">
-                                    <span>Preâmbulo (Designação da Categoria + Elementos Conhecidos)</span>
-                                    <span className="form-label-hint">Sem ponto final. Ex: DISPOSITIVO DE ACIONAMENTO compreendendo carcaça (1)</span>
+                                    <span>Preâmbulo (Designação da Categoria + Elementos Conhecidos) *</span>
+                                    <span
+                                        style={{
+                                            fontSize: "0.73rem",
+                                            fontWeight: 700,
+                                            padding: "0.12rem 0.5rem",
+                                            borderRadius: "999px",
+                                            background: preambuloValido ? "#dcfce7" : "#fef2f2",
+                                            color: preambuloValido ? "#15803d" : "#b91c1c",
+                                            border: preambuloValido ? "1px solid #86efac" : "1px solid #fca5a5"
+                                        }}
+                                    >
+                                        {preambuloValido ? "✓ Preenchido" : "Obrigatório (mín. 3 caracteres)"}
+                                    </span>
                                 </label>
                                 <input
                                     type="text"
                                     className="form-input"
+                                    style={{
+                                        borderColor: preambuloValido ? "#22c55e" : "#ef4444",
+                                        backgroundColor: preambuloValido ? "#ffffff" : "#fffafa"
+                                    }}
                                     placeholder="Ex: SISTEMA DE MONITORAMENTO DE SENSORES compreendendo um microcontrolador"
                                     value={item.preambulo}
                                     onChange={(e) => handleAtualizarItem(index, { preambulo: e.target.value })}
@@ -187,12 +204,28 @@ export const StepReinvidicacoes: React.FC<StepReinvidicacoesProps> = ({
                             {/* Caracterização */}
                             <div className="form-group">
                                 <label className="form-label">
-                                    <span>Caracterização (Após a expressão obrigatória "caracterizado por")</span>
-                                    <span className="form-label-hint">Novo arranjo técnico ou elemento inventivo</span>
+                                    <span>Caracterização (Após a expressão obrigatória "caracterizado por") *</span>
+                                    <span
+                                        style={{
+                                            fontSize: "0.73rem",
+                                            fontWeight: 700,
+                                            padding: "0.12rem 0.5rem",
+                                            borderRadius: "999px",
+                                            background: caracValida ? "#dcfce7" : "#fef2f2",
+                                            color: caracValida ? "#15803d" : "#b91c1c",
+                                            border: caracValida ? "1px solid #86efac" : "1px solid #fca5a5"
+                                        }}
+                                    >
+                                        {caracValida ? "✓ Preenchido" : "Obrigatório (mín. 5 caracteres)"}
+                                    </span>
                                 </label>
                                 <textarea
                                     className="form-textarea"
-                                    style={{ minHeight: "70px" }}
+                                    style={{
+                                        minHeight: "70px",
+                                        borderColor: caracValida ? "#22c55e" : "#ef4444",
+                                        backgroundColor: caracValida ? "#ffffff" : "#fffafa"
+                                    }}
                                     placeholder="Ex: possuir um módulo de filtragem adaptativa que calcula a derivada dos sinais em tempo real..."
                                     value={item.caracterizacao}
                                     onChange={(e) => handleAtualizarItem(index, { caracterizacao: e.target.value })}

@@ -96,10 +96,10 @@ export const StepDesenhos: React.FC<StepDesenhosProps> = ({
 
             {/* Aviso condicional para MU ou Software */}
             {isMU && desenhos.length === 0 && (
-                <div className="warning-alert">
+                <div className="warning-alert" style={{ backgroundColor: "#fef2f2", borderColor: "#fca5a5", color: "#b91c1c" }}>
                     <AlertCircle size={20} style={{ flexShrink: 0 }} />
                     <div>
-                        <strong>Atenção para Modelo de Utilidade (MU):</strong> O Art. 9º da Lei nº 9.279/1996 exige obrigatoriamente a apresentação de ao menos um desenho/figura técnica que comprove a nova disposição construtiva.
+                        <strong>Obrigatório para Modelo de Utilidade (MU):</strong> O Art. 9º da Lei nº 9.279/1996 exige obrigatoriamente a inclusão de ao menos 1 figura técnica para avançar à próxima etapa.
                     </div>
                 </div>
             )}
@@ -108,7 +108,7 @@ export const StepDesenhos: React.FC<StepDesenhosProps> = ({
                 <div className="info-alert">
                     <Info size={20} style={{ flexShrink: 0 }} />
                     <div>
-                        <strong>Diretriz de Software (CII):</strong> Para programas de computador, recomenda-se a inclusão de diagramas em blocos da arquitetura de hardware e fluxogramas operacionais do método patenteado.
+                        <strong>Diretriz de Software (CII):</strong> Para programas de computador vinculados a hardware, recomenda-se a inclusão de diagramas em blocos da arquitetura física e fluxogramas operacionais do método patenteado.
                     </div>
                 </div>
             )}
@@ -130,82 +130,107 @@ export const StepDesenhos: React.FC<StepDesenhosProps> = ({
                 </div>
             ) : (
                 <div className="desenhos-grid">
-                    {desenhos.map((fig, index) => (
-                        <div key={index} className="desenho-card">
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "var(--color-primary)" }}>
-                                    Figura {fig.numero_figura || `${index + 1}`}
-                                </span>
-                                <button
-                                    type="button"
-                                    className="btn btn-danger btn-sm"
-                                    onClick={() => handleRemoverFigura(index)}
-                                    title="Remover figura"
-                                >
-                                    <Trash2 size={14} />
-                                </button>
-                            </div>
+                    {desenhos.map((fig, index) => {
+                        const numValido = fig.numero_figura.trim().length >= 1;
+                        const descValida = fig.descricao_breve.trim().length >= 3;
 
-                            {/* Preview da Imagem */}
-                            {fig.imagem_base64 ? (
-                                <div style={{ position: "relative" }}>
-                                    <img
-                                        src={fig.imagem_base64}
-                                        alt={`Figura ${fig.numero_figura}`}
-                                        className="desenho-img-preview"
-                                    />
+                        return (
+                            <div key={index} className="desenho-card">
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "var(--color-primary)" }}>
+                                        Figura {fig.numero_figura || `${index + 1}`}
+                                    </span>
                                     <button
                                         type="button"
-                                        className="btn btn-secondary btn-sm"
-                                        style={{ position: "absolute", bottom: "8px", right: "8px", opacity: 0.9 }}
-                                        onClick={() => dispararUpload(index)}
+                                        className="btn btn-danger btn-sm"
+                                        onClick={() => handleRemoverFigura(index)}
+                                        title="Remover figura"
                                     >
-                                        <Upload size={14} /> Trocar
+                                        <Trash2 size={14} />
                                     </button>
                                 </div>
-                            ) : (
-                                <div
-                                    className="desenho-img-preview"
-                                    style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", gap: "0.5rem" }}
-                                    onClick={() => dispararUpload(index)}
-                                >
-                                    <Upload size={24} color="var(--color-text-muted)" />
-                                    <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", fontWeight: 500 }}>
-                                        Clique para carregar imagem (PNG/JPG)
-                                    </span>
+
+                                {/* Preview da Imagem */}
+                                {fig.imagem_base64 ? (
+                                    <div style={{ position: "relative" }}>
+                                        <img
+                                            src={fig.imagem_base64}
+                                            alt={`Figura ${fig.numero_figura}`}
+                                            className="desenho-img-preview"
+                                        />
+                                        <button
+                                            type="button"
+                                            className="btn btn-secondary btn-sm"
+                                            style={{ position: "absolute", bottom: "8px", right: "8px", opacity: 0.9 }}
+                                            onClick={() => dispararUpload(index)}
+                                        >
+                                            <Upload size={14} /> Trocar
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div
+                                        className="desenho-img-preview"
+                                        style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", gap: "0.5rem" }}
+                                        onClick={() => dispararUpload(index)}
+                                    >
+                                        <Upload size={24} color="var(--color-text-muted)" />
+                                        <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", fontWeight: 500 }}>
+                                            Clique para carregar imagem (PNG/JPG)
+                                        </span>
+                                    </div>
+                                )}
+
+                                {/* Número da Figura */}
+                                <div className="form-group">
+                                    <label className="form-label" style={{ fontSize: "0.8rem" }}>
+                                        <span>Número/Identificação *</span>
+                                        <span style={{ fontSize: "0.72rem", color: numValido ? "#15803d" : "#b91c1c" }}>
+                                            {numValido ? "✓" : "Obrigatório"}
+                                        </span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        className="form-input"
+                                        style={{
+                                            padding: "0.4rem 0.6rem",
+                                            fontSize: "0.85rem",
+                                            borderColor: numValido ? "#22c55e" : "#ef4444"
+                                        }}
+                                        placeholder="Ex: 1, 2A, 3"
+                                        value={fig.numero_figura}
+                                        onChange={(e) => {
+                                            // Permite números e sufixos alfanuméricos curtos (ex: 1, 2A, 3B) bloqueando símbolos inválidos
+                                            const limpo = e.target.value.replace(/[^0-9a-zA-Z]/g, "").toUpperCase().slice(0, 6);
+                                            handleAtualizarFigura(index, { numero_figura: limpo });
+                                        }}
+                                    />
                                 </div>
-                            )}
 
-                            {/* Número da Figura */}
-                            <div className="form-group">
-                                <label className="form-label" style={{ fontSize: "0.8rem" }}>
-                                    Número/Identificação:
-                                </label>
-                                <input
-                                    type="text"
-                                    className="form-input"
-                                    style={{ padding: "0.4rem 0.6rem", fontSize: "0.85rem" }}
-                                    placeholder="Ex: 1, 2A, 3"
-                                    value={fig.numero_figura}
-                                    onChange={(e) => handleAtualizarFigura(index, { numero_figura: e.target.value })}
-                                />
+                                {/* Descrição Breve */}
+                                <div className="form-group">
+                                    <label className="form-label" style={{ fontSize: "0.8rem" }}>
+                                        <span>Descrição Breve *</span>
+                                        <span style={{ fontSize: "0.72rem", color: descValida ? "#15803d" : "#b91c1c" }}>
+                                            {descValida ? "✓ Preenchida" : "Mín. 3 caracteres"}
+                                        </span>
+                                    </label>
+                                    <textarea
+                                        className="form-textarea"
+                                        style={{
+                                            minHeight: "60px",
+                                            padding: "0.4rem 0.6rem",
+                                            fontSize: "0.85rem",
+                                            borderColor: descValida ? "#22c55e" : "#ef4444",
+                                            backgroundColor: descValida ? "#ffffff" : "#fffafa"
+                                        }}
+                                        placeholder="Ex: Diagrama de blocos em vista esquemática do circuito..."
+                                        value={fig.descricao_breve}
+                                        onChange={(e) => handleAtualizarFigura(index, { descricao_breve: e.target.value })}
+                                    />
+                                </div>
                             </div>
-
-                            {/* Descrição Breve */}
-                            <div className="form-group">
-                                <label className="form-label" style={{ fontSize: "0.8rem" }}>
-                                    Descrição Breve:
-                                </label>
-                                <textarea
-                                    className="form-textarea"
-                                    style={{ minHeight: "60px", padding: "0.4rem 0.6rem", fontSize: "0.85rem" }}
-                                    placeholder="Ex: Diagrama de blocos em vista esquemática do circuito..."
-                                    value={fig.descricao_breve}
-                                    onChange={(e) => handleAtualizarFigura(index, { descricao_breve: e.target.value })}
-                                />
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
         </div>

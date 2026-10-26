@@ -13,9 +13,13 @@ export const StepResumo: React.FC<StepResumoProps> = ({
     tituloPadrao,
     onChangeResumo
 }) => {
+    const tituloEfetivo = (resumo.titulo || tituloPadrao || "").trim();
+    const tituloValido = tituloEfetivo.length >= 5;
+
     const textoLimpo = (resumo.texto || "").trim();
     const contagemPalavras = textoLimpo ? textoLimpo.split(/\s+/).filter(Boolean).length : 0;
     const isPalavrasValidas = contagemPalavras >= 50 && contagemPalavras <= 200;
+    const textoMinimoValido = textoLimpo.length >= 20;
 
     const handleCampoChange = (campo: keyof ResumoPI, valor: string) => {
         onChangeResumo({
@@ -38,10 +42,22 @@ export const StepResumo: React.FC<StepResumoProps> = ({
 
             {/* Título do Resumo */}
             <div className="form-group">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
                     <label className="form-label" htmlFor="resumo_titulo">
-                        <span>Título do Resumo</span>
-                        <span className="form-label-hint">Deve corresponder ao título do relatório descritivo</span>
+                        <span>Título do Resumo *</span>
+                        <span
+                            style={{
+                                fontSize: "0.73rem",
+                                fontWeight: 700,
+                                padding: "0.12rem 0.5rem",
+                                borderRadius: "999px",
+                                background: tituloValido ? "#dcfce7" : "#fef2f2",
+                                color: tituloValido ? "#15803d" : "#b91c1c",
+                                border: tituloValido ? "1px solid #86efac" : "1px solid #fca5a5"
+                            }}
+                        >
+                            {tituloValido ? "✓ Preenchido" : "Obrigatório (mín. 5 caracteres)"}
+                        </span>
                     </label>
                     {(!resumo.titulo && tituloPadrao) && (
                         <button
@@ -50,7 +66,7 @@ export const StepResumo: React.FC<StepResumoProps> = ({
                             onClick={() => handleCampoChange("titulo", tituloPadrao)}
                             style={{ fontSize: "0.75rem", padding: "0.2rem 0.5rem" }}
                         >
-                            Usar título do relatório
+                            Confirmar título do relatório
                         </button>
                     )}
                 </div>
@@ -58,6 +74,10 @@ export const StepResumo: React.FC<StepResumoProps> = ({
                     id="resumo_titulo"
                     type="text"
                     className="form-input"
+                    style={{
+                        borderColor: tituloValido ? "#22c55e" : "#ef4444",
+                        backgroundColor: tituloValido ? "#ffffff" : "#fffafa"
+                    }}
                     placeholder="Ex: SISTEMA E MÉTODO PARA MONITORAMENTO DE SENSORES EM BORDA"
                     value={resumo.titulo || tituloPadrao || ""}
                     onChange={(e) => handleCampoChange("titulo", e.target.value)}
@@ -66,26 +86,34 @@ export const StepResumo: React.FC<StepResumoProps> = ({
 
             {/* Texto do Resumo com contagem em tempo real */}
             <div className="form-group">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
                     <label className="form-label" htmlFor="resumo_texto">
-                        <span>Texto do Resumo (Parágrafo Único)</span>
+                        <span>Texto do Resumo (Parágrafo Único) *</span>
                     </label>
                     <span style={{
-                        fontSize: "0.85rem",
-                        fontWeight: 600,
+                        fontSize: "0.8rem",
+                        fontWeight: 700,
+                        padding: "0.15rem 0.6rem",
+                        borderRadius: "999px",
                         display: "flex",
                         alignItems: "center",
                         gap: "0.3rem",
-                        color: isPalavrasValidas ? "var(--color-success)" : contagemPalavras > 0 ? "var(--color-warning)" : "var(--color-text-muted)"
+                        background: isPalavrasValidas ? "#dcfce7" : textoMinimoValido ? "#fef9c3" : "#fef2f2",
+                        color: isPalavrasValidas ? "#15803d" : textoMinimoValido ? "#854d0e" : "#b91c1c",
+                        border: isPalavrasValidas ? "1px solid #86efac" : textoMinimoValido ? "1px solid #fde047" : "1px solid #fca5a5"
                     }}>
-                        {isPalavrasValidas && <CheckCircle2 size={16} />}
+                        {isPalavrasValidas && <CheckCircle2 size={14} />}
                         {contagemPalavras} palavras (Meta legal: 50 a 200 palavras)
                     </span>
                 </div>
                 <textarea
                     id="resumo_texto"
                     className="form-textarea"
-                    style={{ minHeight: "160px" }}
+                    style={{
+                        minHeight: "160px",
+                        borderColor: textoMinimoValido ? "#22c55e" : "#ef4444",
+                        backgroundColor: textoMinimoValido ? "#ffffff" : "#fffafa"
+                    }}
                     placeholder="A presente invenção refere-se a... O sistema soluciona o problema através de... proporcionando maior eficiência e..."
                     value={resumo.texto || ""}
                     onChange={(e) => handleCampoChange("texto", e.target.value)}
@@ -97,7 +125,7 @@ export const StepResumo: React.FC<StepResumoProps> = ({
                 <div className="warning-alert">
                     <AlertTriangle size={18} style={{ flexShrink: 0 }} />
                     <div>
-                        O INPI exige que o resumo contenha entre <strong>50 e 200 palavras</strong> em parágrafo único. Atualmente você possui {contagemPalavras} palavras {contagemPalavras < 50 ? `(faltam ${50 - contagemPalavras} palavras)` : `(excedeu em ${contagemPalavras - 200} palavras)`}.
+                        Recomendação INPI (IN 30/2013): O resumo deve conter idealmente entre <strong>50 e 200 palavras</strong> em parágrafo único. Atualmente você possui {contagemPalavras} palavras {contagemPalavras < 50 ? `(faltam ${50 - contagemPalavras} palavras para a faixa ideal)` : `(excedeu em ${contagemPalavras - 200} palavras)`}.
                     </div>
                 </div>
             )}

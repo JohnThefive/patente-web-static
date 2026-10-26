@@ -30,6 +30,7 @@ from app.models.patent_schemas import (
     ReivindicacaoItem,
     RelatorioDescritivoMU,
     RelatorioDescritivoPI,
+    RelatorioDescritivoSoftwareCII,
     ResumoPI,
 )
 
@@ -42,6 +43,7 @@ DIRETORIO_BACKEND = Path(__file__).resolve().parent.parent.parent
 
 PASTA_TEMPLATES_PI = DIRETORIO_BACKEND / "templates" / "templates_pi"
 PASTA_TEMPLATES_MU = DIRETORIO_BACKEND / "templates" / "templates_mu"
+PASTA_TEMPLATES_CII = DIRETORIO_BACKEND / "templates" / "templates_cii"
 
 TEMPLATE_RELATORIO_PI = PASTA_TEMPLATES_PI / "01_template_PI_relatorio_descritivo.docx"
 TEMPLATE_REIVINDICACOES_PI = PASTA_TEMPLATES_PI / "02_Exemplo_de_PI_quadro_reinvendictorio.docx"
@@ -49,6 +51,7 @@ TEMPLATE_DESENHOS_PI = PASTA_TEMPLATES_PI / "03_Exemplo_de_PI _desenhos.docx"
 TEMPLATE_RESUMO_PI = PASTA_TEMPLATES_PI / "04_Exemplo_de_PI_Resumo.docx"
 
 TEMPLATE_RELATORIO_MU = PASTA_TEMPLATES_MU / "01_Exemplo_de_MU_Relatorio_Descritivo.docx"
+TEMPLATE_RELATORIO_CII = PASTA_TEMPLATES_CII / "01_template_CII_relatorio_descritivo.docx"
 
 
 # ==============================================================================
@@ -139,6 +142,17 @@ def gerar_relatorio_pi_ram(dados: RelatorioDescritivoPI, tipo_header: str = "Pat
     return _salvar_doc_em_ram(doc)
 
 
+def gerar_relatorio_cii_ram(dados: RelatorioDescritivoSoftwareCII) -> bytes:
+    """Renderiza o Relatório Descritivo de Software/CII (Resolução INPI nº 158/2016) com Efeito Técnico e Arquitetura."""
+    doc = DocxTemplate(str(TEMPLATE_RELATORIO_CII))
+    contexto = {
+        "relatorio": dados.model_dump(),
+        "header_title": formatar_header("Patente de Invenção (CII)", dados.titulo, default="Relatório Descritivo - CII"),
+    }
+    doc.render(contexto)
+    return _salvar_doc_em_ram(doc)
+
+
 def gerar_relatorio_mu_ram(dados: RelatorioDescritivoMU) -> bytes:
     doc = DocxTemplate(str(TEMPLATE_RELATORIO_MU))
     relatorio_dict = dados.model_dump()
@@ -221,7 +235,7 @@ def gerar_pacote_completo_em_ram(
     exportar_pdf: bool = False,
 ) -> io.BytesIO:
     """
-    Monta os 4 documentos oficiais do INPI em memória RAM e retorna um buffer `.zip`.
+    Monta os 4 documentos oficiais do INPI (PI, MU ou CII_SOFTWARE) em memória RAM e retorna um buffer `.zip`.
     """
     patente.relatorio.desenhos = patente.desenhos
     sufixo = patente.modalidade  # "PI", "MU" ou "CII_SOFTWARE"
@@ -231,9 +245,7 @@ def gerar_pacote_completo_em_ram(
     if isinstance(patente, PatenteMUCompleta):
         arquivos_docx_ram[f"01_Relatorio_Descritivo_{sufixo}.docx"] = gerar_relatorio_mu_ram(patente.relatorio)
     elif isinstance(patente, PatenteSoftwareCIICompleta):
-        arquivos_docx_ram[f"01_Relatorio_Descritivo_{sufixo}.docx"] = gerar_relatorio_pi_ram(
-            patente.relatorio, tipo_header="Patente de Invenção (CII)"
-        )
+        arquivos_docx_ram[f"01_Relatorio_Descritivo_{sufixo}.docx"] = gerar_relatorio_cii_ram(patente.relatorio)
     else:
         arquivos_docx_ram[f"01_Relatorio_Descritivo_{sufixo}.docx"] = gerar_relatorio_pi_ram(patente.relatorio)
 
@@ -249,7 +261,7 @@ def gerar_pacote_completo_em_ram(
     # 4. Resumo
     arquivos_docx_ram[f"04_Resumo_{sufixo}.docx"] = gerar_resumo_ram(patente.resumo)
 
-    # 5. Conversão opcional para PDF
+    # 5. Conversão opcional para PDF via LibreOffice Headless
     arquivos_pdf_ram: Dict[str, bytes] = {}
     if exportar_pdf:
         arquivos_pdf_ram = converter_bytes_docx_para_pdf_efemero(arquivos_docx_ram)

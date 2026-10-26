@@ -15,7 +15,7 @@ router = APIRouter(prefix="/api/v1/patents", tags=["Exportação de Minutas INPI
 
 @router.post(
     "/export-package",
-    summary="Gera o pacote .ZIP com os 4 documentos do INPI (100% em RAM)",
+    summary="Gera o pacote .ZIP com os 4 documentos formais do INPI (100% em RAM)",
 )
 async def export_patent_package(
     payload: PacotePatenteUnion,
@@ -35,9 +35,10 @@ async def export_patent_package(
         background_tasks.add_task(
             record_export_metadata,
             categoria_patente=payload.modalidade,
-            versao_template="v1.0-inpi",
+            versao_template="v1.1-inpi",
             quantidade_reivindicacoes=len(payload.quadro_reivindicatorio),
             quantidade_figuras=len(payload.desenhos),
+            incluiu_pdf=exportar_pdf,
         )
 
         nome_arquivo = f"Pacote_Minutas_{payload.modalidade}.zip"
