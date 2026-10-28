@@ -310,12 +310,12 @@ export const StepRelatorio: React.FC<StepRelatorioProps> = ({
                             <div className="form-group">
                                 <label className="form-label" htmlFor="efeito_tecnico">
                                     <span>Efeito Técnico Alcançado *</span>
-                                    <BadgeValidacao valido={efeitoCiiValor.trim().length >= 10} textoErro="Obrigatório para CII (mín. 10 caracteres)" />
+                                    <BadgeValidacao valido={efeitoCiiValor.trim().length >= 15} textoErro="Obrigatório para CII (mín. 15 caracteres)" />
                                 </label>
                                 <textarea
                                     id="efeito_tecnico"
                                     className="form-textarea"
-                                    style={estiloBordaCampo(efeitoCiiValor.trim().length >= 10)}
+                                    style={estiloBordaCampo(efeitoCiiValor.trim().length >= 15)}
                                     placeholder="O método produz uma redução efetiva do tempo de latência de renderização através do escalonamento preditivo de threads no hardware gráfico..."
                                     value={efeitoCiiValor}
                                     onChange={(e) => handleCampoChange("efeito_tecnico_alcancado", e.target.value)}
@@ -324,14 +324,13 @@ export const StepRelatorio: React.FC<StepRelatorioProps> = ({
 
                             <div className="form-group">
                                 <label className="form-label" htmlFor="arquitetura_execucao">
-                                    <span>Arquitetura de Execução / Hardware *</span>
-                                    <BadgeValidacao valido={arqCiiValor.trim().length >= 5} textoErro="Obrigatório para CII (mín. 5 caracteres)" />
+                                    <span>Arquitetura de Execução / Hardware</span>
+                                    <span className="form-label-hint">Sensores, microprocessadores, servidores ou ecossistema onde o algoritmo atua</span>
                                 </label>
                                 <input
                                     id="arquitetura_execucao"
                                     type="text"
                                     className="form-input"
-                                    style={estiloBordaCampo(arqCiiValor.trim().length >= 5)}
                                     placeholder="Ex: Cluster de servidores em nuvem integrado a módulos sensores IoT via protocolo MQTT"
                                     value={arqCiiValor}
                                     onChange={(e) => handleCampoChange("arquitetura_execucao", e.target.value)}
@@ -345,7 +344,7 @@ export const StepRelatorio: React.FC<StepRelatorioProps> = ({
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
                             <label className="form-label" style={{ gap: "0.75rem" }}>
                                 <span>Descrição Detalhada da Invenção (Parágrafos) *</span>
-                                <BadgeValidacao valido={paragrafosValidos} textoErro="Ao menos 1 parágrafo (mín. 10 caracteres)" />
+                                <BadgeValidacao valido={paragrafosValidos} textoErro="Ao menos 1 parágrafo (mín. 15 caracteres)" />
                             </label>
                             <button
                                 type="button"
@@ -368,7 +367,7 @@ export const StepRelatorio: React.FC<StepRelatorioProps> = ({
                                     </span>
                                     <textarea
                                         className="form-textarea"
-                                        style={{ minHeight: "80px", flex: 1, ...estiloBordaCampo(paragrafo.trim().length >= 10) }}
+                                        style={{ minHeight: "80px", flex: 1, ...estiloBordaCampo(paragrafo.trim().length >= 15) }}
                                         placeholder={`Descreva o funcionamento ou detalhe de concretização (Parágrafo ${idx + 1})...`}
                                         value={paragrafo}
                                         onChange={(e) => handleParagrafoChange(idx, e.target.value)}

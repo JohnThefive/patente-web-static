@@ -93,8 +93,8 @@ export const StepReinvidicacoes: React.FC<StepReinvidicacoesProps> = ({
             <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
                 {reivindicacoes.map((item, index) => {
                     const isPrimeira = item.numero === 1;
-                    const preambuloValido = item.preambulo.trim().length >= 3;
-                    const caracValida = item.caracterizacao.trim().length >= 5;
+                    const preambuloValido = item.preambulo.trim().length >= 5;
+                    const caracValida = item.caracterizacao.trim().length >= 10;
 
                     return (
                         <div key={index} className="reivindicacao-card">
@@ -185,7 +185,7 @@ export const StepReinvidicacoes: React.FC<StepReinvidicacoesProps> = ({
                                             border: preambuloValido ? "1px solid #86efac" : "1px solid #fca5a5"
                                         }}
                                     >
-                                        {preambuloValido ? "✓ Preenchido" : "Obrigatório (mín. 3 caracteres)"}
+                                        {preambuloValido ? "✓ Preenchido" : "Obrigatório (mín. 5 caracteres)"}
                                     </span>
                                 </label>
                                 <input
@@ -216,7 +216,7 @@ export const StepReinvidicacoes: React.FC<StepReinvidicacoesProps> = ({
                                             border: caracValida ? "1px solid #86efac" : "1px solid #fca5a5"
                                         }}
                                     >
-                                        {caracValida ? "✓ Preenchido" : "Obrigatório (mín. 5 caracteres)"}
+                                        {caracValida ? "✓ Preenchido" : "Obrigatório (mín. 10 caracteres)"}
                                     </span>
                                 </label>
                                 <textarea

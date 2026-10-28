@@ -29,14 +29,14 @@ function bufferParaHex(buffer: ArrayBuffer): string {
  * diretamente no navegador do usuário.
  */
 export async function gerarHashSha512Arquivo(arquivo: File): Promise<string> {
-    if (!window.crypto || !window.crypto.subtle) {
+    if (!globalThis.crypto || !globalThis.crypto.subtle) {
         throw new Error(
             "A Web Crypto API não está disponível neste contexto do navegador (acesse via localhost ou HTTPS)."
         );
     }
 
     const arrayBuffer = await arquivo.arrayBuffer();
-    const digestBuffer = await window.crypto.subtle.digest("SHA-512", arrayBuffer);
+    const digestBuffer = await globalThis.crypto.subtle.digest("SHA-512", arrayBuffer);
     return bufferParaHex(digestBuffer);
 }
 

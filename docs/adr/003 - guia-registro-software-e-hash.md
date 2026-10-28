@@ -158,6 +158,7 @@ O módulo de software do **Patente_web** foi projetado seguindo 4 requisitos de 
 
 | Identificador | Requisito | Como o Sistema Garante |
 | :--- | :--- | :--- |
+
 | **[RNF01]** | **Sigilo e Não Retenção de Código (Client-Side Only)** | Processamento 100% no navegador via Web Crypto API. O backend não recebe arquivos de código e não há persistência em banco de dados (`Zero-Storage`). |
 | **[RNF02]** | **Integridade Probatória (Cadeia de Custódia)** | Alertas visuais mandatórios na tela de Hash e no checklist instruindo o arquivamento imutável do arquivo original. |
 | **[RNF03]** | **Sanitização e Validação Estrita de Inputs** | Regex estrito `/^[0-9a-f]{128}$/` no Hash e bloqueio em tempo real de caracteres inválidos; máscara numérica estrita para o número da GRU (`/\D/g`). |

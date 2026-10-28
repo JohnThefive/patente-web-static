@@ -96,19 +96,26 @@ export const StepDesenhos: React.FC<StepDesenhosProps> = ({
 
             {/* Aviso condicional para MU ou Software */}
             {isMU && desenhos.length === 0 && (
-                <div className="warning-alert" style={{ backgroundColor: "#fef2f2", borderColor: "#fca5a5", color: "#b91c1c" }}>
+                <div className="warning-alert">
                     <AlertCircle size={20} style={{ flexShrink: 0 }} />
                     <div>
-                        <strong>Obrigatório para Modelo de Utilidade (MU):</strong> O Art. 9º da Lei nº 9.279/1996 exige obrigatoriamente a inclusão de ao menos 1 figura técnica para avançar à próxima etapa.
+                        <strong>Recomendação para Modelo de Utilidade (MU):</strong> O Art. 9º da Lei nº 9.279/1996 recomenda a inclusão de figuras técnicas que ilustrem a disposição construtiva (opcional para testes de rascunho).
                     </div>
                 </div>
             )}
 
             {isSoftware && (
-                <div className="info-alert">
+                <div
+                    className={desenhos.length === 0 ? "warning-alert" : "info-alert"}
+                    style={
+                        desenhos.length === 0
+                            ? { backgroundColor: "#fef2f2", borderColor: "#fca5a5", color: "#b91c1c" }
+                            : undefined
+                    }
+                >
                     <Info size={20} style={{ flexShrink: 0 }} />
                     <div>
-                        <strong>Diretriz de Software (CII):</strong> Para programas de computador vinculados a hardware, recomenda-se a inclusão de diagramas em blocos da arquitetura física e fluxogramas operacionais do método patenteado.
+                        <strong>Obrigatório para Software (CII — Resolução 158/2016):</strong> Inclua ao menos 1 figura técnica (diagrama em blocos da arquitetura física ou fluxograma operacional do método) para avançar.
                     </div>
                 </div>
             )}

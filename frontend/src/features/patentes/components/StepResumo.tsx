@@ -111,8 +111,8 @@ export const StepResumo: React.FC<StepResumoProps> = ({
                     className="form-textarea"
                     style={{
                         minHeight: "160px",
-                        borderColor: textoMinimoValido ? "#22c55e" : "#ef4444",
-                        backgroundColor: textoMinimoValido ? "#ffffff" : "#fffafa"
+                        borderColor: isPalavrasValidas ? "#22c55e" : "#ef4444",
+                        backgroundColor: isPalavrasValidas ? "#ffffff" : "#fffafa"
                     }}
                     placeholder="A presente invenção refere-se a... O sistema soluciona o problema através de... proporcionando maior eficiência e..."
                     value={resumo.texto || ""}
