@@ -59,53 +59,60 @@ O sistema compila e entrega um pacote compactado contendo as 4 peças formais pr
 
 ---
 
-## 🚀 Como Executar o Projeto Localmente
+---
 
-### 1. Clonar o Repositório
+## 🚀 Como Executar o Projeto
+
+Você pode executar o projeto de duas formas: usando **Docker Compose** (recomendado para testes integrados e servidores) ou **manualmente no ambiente local** (ideal para desenvolvimento ativo).
+
+### Opção 1: Executar com Docker Compose (Mais Simples)
+
+Não exige instalação prévia de Python, Node ou LibreOffice no computador:
 
 ```bash
+# 1. Clonar o repositório
 git clone https://github.com/Johnthefive/Patente_web.git
 cd Patente_web
+
+# 2. Construir e iniciar os containers (Frontend + Backend)
+docker compose up --build
+```
+
+* **Frontend:** Acesse em [http://localhost:5173](http://localhost:5173)
+* **Backend API & Swagger:** Acesse em [http://localhost:8000/docs](http://localhost:8000/docs)
+
+Para parar os containers:
+```bash
+docker compose down
 ```
 
 ---
 
-### 2. Configurar e Iniciar o Backend (FastAPI)
+### Opção 2: Executar Manualmente no Ambiente Local (Desenvolvimento Ativo)
 
-#### No Linux / macOS:
+#### 1. Backend (FastAPI + Python 3.12)
 ```bash
 cd backend
 python3 -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate    # No Windows: .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
+* Executar testes do backend: `pytest -v`
 
-#### No Windows (PowerShell):
-```powershell
-cd backend
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-```
-
-* API online em: `http://127.0.0.1:8000`
-* Documentação interativa (Swagger): `http://127.0.0.1:8000/docs`
-
----
-
-### 3. Configurar e Iniciar o Frontend (React + Vite)
-
-Em um novo terminal:
-
+#### 2. Frontend (React 19 + Vite)
+Em outro terminal:
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+* Executar testes do frontend: `npm test`
+
+---
 
 ![Texto alternativo da imagem](docs/assets/tela_inicial_patenweb.png)
+
 ---
 
 ## 🏛️ Decisões de Arquitetura (ADRs)
@@ -114,7 +121,8 @@ As decisões de engenharia e segurança estão documentadas na pasta [`docs/adr/
 
 * **[ADR 001](docs/adr/001-arquitetura-local-first-zero-storage.md):** Adoção de Arquitetura Local-First (IndexedDB) e Geração Efêmera (Zero-Storage).
 * **[ADR 002](docs/adr/002-rotas-da-api.md):** Documentação das Rotas da API e especificações dos Payloads JSON.
-* **[Guia e-RPC & Criptografia Hash](docs/guia-registro-software-e-hash.md):** Guia completo sobre o Registro de Software no INPI, processo legal, Web Crypto API e requisitos de segurança (RNF01 a RNF04).
+* **[ADR 003](docs/adr/003%20-%20guia-registro-software-e-hash.md):** Guia do Registro de Software (e-RPC), Criptografia Hash SHA-512 e Requisitos Não-Funcionais (RNF01 a RNF04).
+* **[ADR 004](docs/adr/004-blindagem-seguranca-e-conteinerizacao-docker.md):** Blindagem de Segurança em Memória RAM e Conteinerização (Docker & Compose).
 
 ---
 

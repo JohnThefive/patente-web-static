@@ -1,7 +1,10 @@
 import saveAs from "file-saver";
 import { PacotePatentePayload } from "../features/patentes/types/TiposPatentes";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+const API_BASE_URL =
+    import.meta.env.VITE_API_URL !== undefined
+        ? import.meta.env.VITE_API_URL
+        : "http://127.0.0.1:8000";
 
 /**
  * Envia os dados estruturados da patente (PI, MU ou CII_SOFTWARE)

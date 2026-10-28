@@ -164,3 +164,54 @@ def test_resumo_rejeita_fora_da_faixa_50_a_200_palavras():
     payload_longo = _montar_payload_pi_valido()
     payload_longo["resumo"]["texto"] = " ".join(["palavra"] * 201)
     assert client.post("/api/v1/patents/export-package", json=payload_longo).status_code == 422
+
+
+def test_seguranca_autoescape_xml_previne_corrupcao_docx():
+    """Garante que caracteres especiais XML (<, >, &) não quebrem nem injetem tags no .docx."""
+    payload = _montar_payload_pi_valido()
+    payload["relatorio"]["problema_e_vantagens"] = (
+        "Opera em T < 50°C & P > 10 bar sem permitir <w:p><script>malicioso</script></w:p>."
+    )
+    resp = client.post("/api/v1/patents/export-package", json=payload)
+    assert resp.status_code == 200
+    assert resp.headers.get("x-content-type-options") == "nosniff"
+
+    with zipfile.ZipFile(io.BytesIO(resp.content)) as outer_zip:
+        docx_bytes = outer_zip.read("01_Relatorio_Descritivo_PI.docx")
+        with zipfile.ZipFile(io.BytesIO(docx_bytes)) as docx_zip:
+            xml_interno = docx_zip.read("word/document.xml").decode("utf-8")
+            assert "&lt;script&gt;malicioso&lt;/script&gt;" in xml_interno
+            assert "<script>malicioso</script>" not in xml_interno
+
+
+def test_seguranca_rejeita_base64_sem_magic_bytes_png_ou_jpeg():
+    """Bloqueia arquivos arbitrários/executáveis disfarçados em Base64 (sem assinatura PNG/JPEG)."""
+    import base64
+
+    falso_binario_b64 = base64.b64encode(b"MZ\x90\x00executavel_falso_disfarcado").decode("ascii")
+    payload = _montar_payload_pi_valido()
+    payload["desenhos"] = [
+        {
+            "numero_figura": "1",
+            "descricao_breve": "Tentativa de envio de binário inválido",
+            "imagem_base64": falso_binario_b64,
+        }
+    ]
+    resp = client.post("/api/v1/patents/export-package", json=payload)
+    assert resp.status_code == 422
+
+
+def test_seguranca_limite_maximo_desenhos_anti_dos():
+    """Bloqueia pacotes que excedam o limite de 20 figuras (proteção contra exaustão de RAM)."""
+    payload = _montar_payload_pi_valido()
+    payload["desenhos"] = [
+        {
+            "numero_figura": str(i),
+            "descricao_breve": f"Figura técnica {i}",
+            "imagem_base64": None,
+        }
+        for i in range(1, 22)  # 21 figuras (máximo permitido = 20)
+    ]
+    resp = client.post("/api/v1/patents/export-package", json=payload)
+    assert resp.status_code == 422
+

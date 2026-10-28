@@ -46,14 +46,27 @@ async def export_patent_package(
             "Content-Disposition": f'attachment; filename="{nome_arquivo}"',
             "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
             "Pragma": "no-cache",
+            "X-Content-Type-Options": "nosniff",
         }
 
+        def _iterar_e_fechar_buffer():
+            try:
+                yield from zip_buffer
+            finally:
+                zip_buffer.close()
+
         return StreamingResponse(
-            zip_buffer,
+            _iterar_e_fechar_buffer(),
             media_type="application/zip",
             headers=headers,
         )
     except FileNotFoundError as exc:
-        raise HTTPException(status_code=500, detail=f"Template não encontrado: {exc}") from exc
+        raise HTTPException(
+            status_code=500,
+            detail="Erro interno de configuração: template oficial de documento não localizado no servidor.",
+        ) from exc
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Erro ao gerar pacote: {exc}") from exc
+        raise HTTPException(
+            status_code=500,
+            detail="Erro interno ao processar o pacote de documentos em memória.",
+        ) from exc

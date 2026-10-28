@@ -86,35 +86,63 @@ class ReivindicacaoItem(BaseModel):
 
 
 # ==============================================================================
-# 2. DESENHOS (Portaria 14/2024 - Processamento em Memória via Base64)
+# 2. DESENHOS (Portaria 14/2024 - Processamento em Memória via Base64 Blindado)
 # ==============================================================================
+# ~5 MB binários equivalem a ~6.8 MB em Base64
+MAX_BASE64_IMAGE_CHARS = 7_000_000
+MAX_DESENHOS_POR_PACOTE = 20
+MAX_REIVINDICACOES_POR_PACOTE = 50
+
+MAGIC_BYTES_PNG = b"\x89PNG\r\n\x1a\n"
+MAGIC_BYTES_JPEG = b"\xff\xd8\xff"
+
+
 class DesenhoItem(BaseModel):
     """
     Representa uma figura técnica enviada pelo frontend React em formato Base64.
+    Valida limite de memória (anti-DoS/OOM) e assinatura binária real (magic bytes PNG/JPEG).
     """
 
-    numero_figura: str = Field(..., description="Identificador da figura (ex: '1', '2A')")
+    numero_figura: str = Field(
+        ...,
+        min_length=1,
+        max_length=20,
+        description="Identificador da figura (ex: '1', '2A')",
+    )
     imagem_base64: Optional[str] = Field(
         default=None,
-        description="Dados da imagem codificados em Base64 (PNG/JPEG) enviados via API",
+        max_length=MAX_BASE64_IMAGE_CHARS,
+        description="Dados da imagem codificados em Base64 (PNG/JPEG, máx. ~5 MB) enviados via API",
     )
     descricao_breve: str = Field(
         default="",
+        max_length=1000,
         description="Descrição sucinta para a seção 'Breve Descrição dos Desenhos'",
     )
 
     @field_validator("imagem_base64")
     @classmethod
     def limpar_e_validar_base64(cls, v: Optional[str]) -> Optional[str]:
-        """Remove eventual prefixo Data URL ('data:image/png;base64,') e valida o Base64."""
+        """Remove eventual prefixo Data URL, valida Base64 e verifica magic bytes PNG/JPEG."""
         if not v:
             return None
         if "," in v and v.startswith("data:image"):
             v = v.split(",", 1)[1]
+        v = v.strip()
+        if len(v) > MAX_BASE64_IMAGE_CHARS:
+            raise ValueError("A imagem excede o limite máximo permitido de 5 MB.")
         try:
-            base64.b64decode(v, validate=True)
+            dados_binarios = base64.b64decode(v, validate=True)
         except Exception as exc:
             raise ValueError("String Base64 da imagem inválida.") from exc
+
+        if not (
+            dados_binarios.startswith(MAGIC_BYTES_PNG)
+            or dados_binarios.startswith(MAGIC_BYTES_JPEG)
+        ):
+            raise ValueError(
+                "Formato de imagem não permitido: envie apenas arquivos PNG ou JPEG autênticos."
+            )
         return v
 
 
@@ -217,8 +245,12 @@ class PatentePICompleta(BaseModel):
 
     modalidade: Literal["PI"] = "PI"
     relatorio: RelatorioDescritivoPI
-    quadro_reivindicatorio: List[ReivindicacaoItem] = Field(..., min_length=1)
-    desenhos: List[DesenhoItem] = Field(default_factory=list)
+    quadro_reivindicatorio: List[ReivindicacaoItem] = Field(
+        ..., min_length=1, max_length=MAX_REIVINDICACOES_POR_PACOTE
+    )
+    desenhos: List[DesenhoItem] = Field(
+        default_factory=list, max_length=MAX_DESENHOS_POR_PACOTE
+    )
     resumo: ResumoPI
 
 
@@ -227,8 +259,12 @@ class PatenteMUCompleta(BaseModel):
 
     modalidade: Literal["MU"] = "MU"
     relatorio: RelatorioDescritivoMU
-    quadro_reivindicatorio: List[ReivindicacaoItem] = Field(..., min_length=1)
-    desenhos: List[DesenhoItem] = Field(default_factory=list)
+    quadro_reivindicatorio: List[ReivindicacaoItem] = Field(
+        ..., min_length=1, max_length=MAX_REIVINDICACOES_POR_PACOTE
+    )
+    desenhos: List[DesenhoItem] = Field(
+        default_factory=list, max_length=MAX_DESENHOS_POR_PACOTE
+    )
     resumo: ResumoPI
 
 
@@ -237,8 +273,12 @@ class PatenteSoftwareCIICompleta(BaseModel):
 
     modalidade: Literal["CII_SOFTWARE"] = "CII_SOFTWARE"
     relatorio: RelatorioDescritivoSoftwareCII
-    quadro_reivindicatorio: List[ReivindicacaoItem] = Field(..., min_length=1)
-    desenhos: List[DesenhoItem] = Field(..., min_length=1)
+    quadro_reivindicatorio: List[ReivindicacaoItem] = Field(
+        ..., min_length=1, max_length=MAX_REIVINDICACOES_POR_PACOTE
+    )
+    desenhos: List[DesenhoItem] = Field(
+        ..., min_length=1, max_length=MAX_DESENHOS_POR_PACOTE
+    )
     resumo: ResumoPI
 
 

@@ -9,6 +9,7 @@ Mapeado exatamente para a árvore do projeto `Patente_web`:
 
 import base64
 import io
+import os
 import shutil
 import subprocess
 import tempfile
@@ -69,11 +70,14 @@ def habilitar_atualizacao_automatica_paginas(doc: DocxTemplate) -> None:
 
 
 def _salvar_doc_em_ram(doc: DocxTemplate) -> bytes:
-    """Habilita a numeração de páginas e retorna os bytes do .docx em memória RAM."""
+    """Habilita a numeração de páginas, extrai os bytes do .docx e fecha o buffer imediatamente."""
     habilitar_atualizacao_automatica_paginas(doc)
     buffer = io.BytesIO()
-    doc.save(buffer)
-    return buffer.getvalue()
+    try:
+        doc.save(buffer)
+        return buffer.getvalue()
+    finally:
+        buffer.close()
 
 
 def encontrar_executavel_libreoffice() -> Optional[str]:
@@ -95,42 +99,63 @@ def encontrar_executavel_libreoffice() -> Optional[str]:
     return None
 
 
+def _obter_diretorio_ram_seguro() -> Optional[str]:
+    """
+    Prioriza `/dev/shm` (sistema de arquivos tmpfs puramente em RAM no Linux)
+    para evitar que arquivos temporários de conversão PDF toquem o disco físico.
+    """
+    dev_shm = Path("/dev/shm")
+    if dev_shm.is_dir() and os.access(dev_shm, os.W_OK):
+        return str(dev_shm)
+    return None
+
+
 def converter_bytes_docx_para_pdf_efemero(arquivos_docx_em_ram: Dict[str, bytes]) -> Dict[str, bytes]:
     """
-    Converte os buffers .docx para .pdf usando um diretório temporário isolado que
-    é automaticamente destruído pelo Python ao sair do bloco `with`.
+    Converte os buffers .docx para .pdf usando `/dev/shm` (RAM) quando disponível,
+    removendo (`unlink`) cada arquivo imediatamente após a leitura em memória.
     """
     soffice_bin = encontrar_executavel_libreoffice()
     if not soffice_bin:
         return {}
 
     pdfs_em_ram: Dict[str, bytes] = {}
-    with tempfile.TemporaryDirectory(prefix="patente_ephemeral_") as temp_dir_str:
+    dir_ram = _obter_diretorio_ram_seguro()
+
+    with tempfile.TemporaryDirectory(prefix="patente_ephemeral_", dir=dir_ram) as temp_dir_str:
         temp_dir = Path(temp_dir_str)
+        perfil_isolado_uri = (temp_dir / "lo_profile").as_uri()
+
         for nome_docx, bytes_docx in arquivos_docx_em_ram.items():
             arq_docx_temp = temp_dir / nome_docx
-            arq_docx_temp.write_bytes(bytes_docx)
-
-            comando = [
-                soffice_bin,
-                "--headless",
-                "--convert-to",
-                "pdf",
-                "--outdir",
-                str(temp_dir),
-                str(arq_docx_temp),
-            ]
-            subprocess.run(comando, capture_output=True, text=True, timeout=60, check=False)
-
             arq_pdf_temp = arq_docx_temp.with_suffix(".pdf")
-            if arq_pdf_temp.exists():
-                pdfs_em_ram[arq_pdf_temp.name] = arq_pdf_temp.read_bytes()
+            try:
+                arq_docx_temp.write_bytes(bytes_docx)
+
+                comando = [
+                    soffice_bin,
+                    f"-env:UserInstallation={perfil_isolado_uri}",
+                    "--headless",
+                    "--convert-to",
+                    "pdf",
+                    "--outdir",
+                    str(temp_dir),
+                    str(arq_docx_temp),
+                ]
+                subprocess.run(comando, capture_output=True, text=True, timeout=60, check=False)
+
+                if arq_pdf_temp.exists():
+                    pdfs_em_ram[arq_pdf_temp.name] = arq_pdf_temp.read_bytes()
+            finally:
+                # Destruição imediata dos arquivos temporários antes mesmo do próximo item
+                arq_docx_temp.unlink(missing_ok=True)
+                arq_pdf_temp.unlink(missing_ok=True)
 
     return pdfs_em_ram
 
 
 # ==============================================================================
-# GERADORES INDIVIDUAIS EM MEMÓRIA RAM
+# GERADORES INDIVIDUAIS EM MEMÓRIA RAM (COM AUTOESCAPE XML ATIVO)
 # ==============================================================================
 def gerar_relatorio_pi_ram(dados: RelatorioDescritivoPI, tipo_header: str = "Patente de Invenção") -> bytes:
     doc = DocxTemplate(str(TEMPLATE_RELATORIO_PI))
@@ -138,7 +163,7 @@ def gerar_relatorio_pi_ram(dados: RelatorioDescritivoPI, tipo_header: str = "Pat
         "relatorio": dados.model_dump(),
         "header_title": formatar_header(tipo_header, dados.titulo, default="Relatório Descritivo"),
     }
-    doc.render(contexto)
+    doc.render(contexto, autoescape=True)
     return _salvar_doc_em_ram(doc)
 
 
@@ -149,7 +174,7 @@ def gerar_relatorio_cii_ram(dados: RelatorioDescritivoSoftwareCII) -> bytes:
         "relatorio": dados.model_dump(),
         "header_title": formatar_header("Patente de Invenção (CII)", dados.titulo, default="Relatório Descritivo - CII"),
     }
-    doc.render(contexto)
+    doc.render(contexto, autoescape=True)
     return _salvar_doc_em_ram(doc)
 
 
@@ -181,7 +206,7 @@ def gerar_relatorio_mu_ram(dados: RelatorioDescritivoMU) -> bytes:
         "relatorio": relatorio_dict,
         "header_title": formatar_header("Modelo de Utilidade", dados.titulo, default="Relatório Descritivo - MU"),
     }
-    doc.render(contexto)
+    doc.render(contexto, autoescape=True)
     return _salvar_doc_em_ram(doc)
 
 
@@ -191,7 +216,7 @@ def gerar_quadro_reivindicatorio_ram(reivindicacoes: List[ReivindicacaoItem]) ->
         "quadro_reivindicatorio": [r.model_dump() for r in reivindicacoes],
         "header_title": formatar_header("Quadro Reivindicatório", default="Quadro Reivindicatório"),
     }
-    doc.render(contexto)
+    doc.render(contexto, autoescape=True)
     return _salvar_doc_em_ram(doc)
 
 
@@ -213,7 +238,7 @@ def gerar_desenhos_ram(desenhos: List[DesenhoItem]) -> bytes:
         "desenhos": lista_desenhos_template,
         "header_title": formatar_header("Desenhos", default="Desenhos"),
     }
-    doc.render(contexto)
+    doc.render(contexto, autoescape=True)
     return _salvar_doc_em_ram(doc)
 
 
@@ -223,7 +248,7 @@ def gerar_resumo_ram(resumo: ResumoPI) -> bytes:
         "resumo": resumo.model_dump(),
         "header_title": formatar_header("Resumo", resumo.titulo, default="Resumo"),
     }
-    doc.render(contexto)
+    doc.render(contexto, autoescape=True)
     return _salvar_doc_em_ram(doc)
 
 
@@ -236,43 +261,49 @@ def gerar_pacote_completo_em_ram(
 ) -> io.BytesIO:
     """
     Monta os 4 documentos oficiais do INPI (PI, MU ou CII_SOFTWARE) em memória RAM e retorna um buffer `.zip`.
+    Limpa explicitamente os dicionários de bytes intermediários após compactar.
     """
     patente.relatorio.desenhos = patente.desenhos
     sufixo = patente.modalidade  # "PI", "MU" ou "CII_SOFTWARE"
     arquivos_docx_ram: Dict[str, bytes] = {}
-
-    # 1. Relatório Descritivo
-    if isinstance(patente, PatenteMUCompleta):
-        arquivos_docx_ram[f"01_Relatorio_Descritivo_{sufixo}.docx"] = gerar_relatorio_mu_ram(patente.relatorio)
-    elif isinstance(patente, PatenteSoftwareCIICompleta):
-        arquivos_docx_ram[f"01_Relatorio_Descritivo_{sufixo}.docx"] = gerar_relatorio_cii_ram(patente.relatorio)
-    else:
-        arquivos_docx_ram[f"01_Relatorio_Descritivo_{sufixo}.docx"] = gerar_relatorio_pi_ram(patente.relatorio)
-
-    # 2. Quadro Reivindicatório
-    arquivos_docx_ram[f"02_Quadro_Reivindicatorio_{sufixo}.docx"] = gerar_quadro_reivindicatorio_ram(
-        patente.quadro_reivindicatorio
-    )
-
-    # 3. Desenhos (apenas se houver figuras com imagem_base64)
-    if any(d.imagem_base64 for d in patente.desenhos):
-        arquivos_docx_ram[f"03_Desenhos_{sufixo}.docx"] = gerar_desenhos_ram(patente.desenhos)
-
-    # 4. Resumo
-    arquivos_docx_ram[f"04_Resumo_{sufixo}.docx"] = gerar_resumo_ram(patente.resumo)
-
-    # 5. Conversão opcional para PDF via LibreOffice Headless
     arquivos_pdf_ram: Dict[str, bytes] = {}
-    if exportar_pdf:
-        arquivos_pdf_ram = converter_bytes_docx_para_pdf_efemero(arquivos_docx_ram)
 
-    # 6. Compactação em memória RAM
-    zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, mode="w", compression=zipfile.ZIP_DEFLATED) as zipf:
-        for nome_docx, conteudo_docx in arquivos_docx_ram.items():
-            zipf.writestr(nome_docx, conteudo_docx)
-        for nome_pdf, conteudo_pdf in arquivos_pdf_ram.items():
-            zipf.writestr(nome_pdf, conteudo_pdf)
+    try:
+        # 1. Relatório Descritivo
+        if isinstance(patente, PatenteMUCompleta):
+            arquivos_docx_ram[f"01_Relatorio_Descritivo_{sufixo}.docx"] = gerar_relatorio_mu_ram(patente.relatorio)
+        elif isinstance(patente, PatenteSoftwareCIICompleta):
+            arquivos_docx_ram[f"01_Relatorio_Descritivo_{sufixo}.docx"] = gerar_relatorio_cii_ram(patente.relatorio)
+        else:
+            arquivos_docx_ram[f"01_Relatorio_Descritivo_{sufixo}.docx"] = gerar_relatorio_pi_ram(patente.relatorio)
 
-    zip_buffer.seek(0)
-    return zip_buffer
+        # 2. Quadro Reivindicatório
+        arquivos_docx_ram[f"02_Quadro_Reivindicatorio_{sufixo}.docx"] = gerar_quadro_reivindicatorio_ram(
+            patente.quadro_reivindicatorio
+        )
+
+        # 3. Desenhos (apenas se houver figuras com imagem_base64)
+        if any(d.imagem_base64 for d in patente.desenhos):
+            arquivos_docx_ram[f"03_Desenhos_{sufixo}.docx"] = gerar_desenhos_ram(patente.desenhos)
+
+        # 4. Resumo
+        arquivos_docx_ram[f"04_Resumo_{sufixo}.docx"] = gerar_resumo_ram(patente.resumo)
+
+        # 5. Conversão opcional para PDF via LibreOffice Headless (em /dev/shm)
+        if exportar_pdf:
+            arquivos_pdf_ram = converter_bytes_docx_para_pdf_efemero(arquivos_docx_ram)
+
+        # 6. Compactação em memória RAM
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, mode="w", compression=zipfile.ZIP_DEFLATED) as zipf:
+            for nome_docx, conteudo_docx in arquivos_docx_ram.items():
+                zipf.writestr(nome_docx, conteudo_docx)
+            for nome_pdf, conteudo_pdf in arquivos_pdf_ram.items():
+                zipf.writestr(nome_pdf, conteudo_pdf)
+
+        zip_buffer.seek(0)
+        return zip_buffer
+    finally:
+        # Limpeza imediata das referências de buffers intermediários na RAM
+        arquivos_docx_ram.clear()
+        arquivos_pdf_ram.clear()

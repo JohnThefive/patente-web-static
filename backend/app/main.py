@@ -3,6 +3,7 @@
 Ponto de entrada da aplicação FastAPI (`Patente_web`).
 """
 
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers.patent_router import router as patent_router
@@ -13,9 +14,15 @@ app = FastAPI(
     version="1.0.0",
 )
 
+origens_permitidas = [
+    origem.strip()
+    for origem in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",")
+    if origem.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=origens_permitidas,
     allow_credentials=True,
     allow_methods=["POST", "GET"],
     allow_headers=["*"],
