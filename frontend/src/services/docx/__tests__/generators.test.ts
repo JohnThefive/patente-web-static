@@ -66,9 +66,15 @@ describe("DOCX Generators (Etapa 4)", () => {
             expect(buffer).toBeInstanceOf(Uint8Array);
             expect(buffer.length).toBeGreaterThan(1000);
 
-            // Verifica se o arquivo gerado é um ZIP/DOCX válido
+            // Verifica se o arquivo gerado é um ZIP/DOCX válido e possui paginação configurada
             const zip = new PizZip(buffer);
-            expect(zip.file("word/document.xml")).toBeDefined();
+            const docXml = zip.file("word/document.xml")?.asText() || "";
+            const headerXml = zip.file("word/header1.xml")?.asText() || "";
+            expect(docXml).toContain("SISTEMA DE MONITORAMENTO IOT");
+            expect(docXml).toContain('<w:headerReference w:type="default" r:id="rId8"/>');
+            expect(docXml).toContain('<w:pgNumType w:start="1"/>');
+            expect(headerXml).toContain("PAGE");
+            expect(headerXml).toContain("NUMPAGES");
         });
 
         it("deve gerar o Relatório Descritivo de MU com sucesso", async () => {
@@ -84,7 +90,10 @@ describe("DOCX Generators (Etapa 4)", () => {
             const buffer = await gerarRelatorioDocx("MU", relatorioMU);
             expect(buffer.length).toBeGreaterThan(1000);
             const zip = new PizZip(buffer);
-            expect(zip.file("word/document.xml")).toBeDefined();
+            const docXml = zip.file("word/document.xml")?.asText() || "";
+            expect(docXml).toContain("DISPOSITIVO DE FIXAÇÃO MODULAR");
+            expect(docXml).toContain("Exemplos de concretizações do modelo de utilidade");
+            expect(docXml).toContain('<w:headerReference w:type="default" r:id="rId8"/>');
         });
 
         it("deve gerar o Relatório Descritivo de Software (CII) com sucesso", async () => {
@@ -135,7 +144,7 @@ describe("DOCX Generators (Etapa 4)", () => {
     });
 
     describe("gerarResumoDocx", () => {
-        it("deve gerar o Resumo com título em maiúsculas e corpo formatado", async () => {
+        it("deve gerar o Resumo com título em maiúsculas, corpo formatado e Content_Types válido", async () => {
             const resumo: ResumoPI = {
                 titulo: "Dispositivo de Teste",
                 texto: "Resumo com mais de 50 palavras explicando a matéria técnica da invenção conforme exigência do INPI."
@@ -145,24 +154,47 @@ describe("DOCX Generators (Etapa 4)", () => {
             expect(buffer.length).toBeGreaterThan(1000);
             const zip = new PizZip(buffer);
             const documentXml = zip.file("word/document.xml")?.asText();
+            const contentTypesXml = zip.file("[Content_Types].xml")?.asText() || "";
             expect(documentXml).toContain("DISPOSITIVO DE TESTE");
             expect(documentXml).toContain("Resumo com mais de 50 palavras");
+            expect(contentTypesXml).toContain('xmlns="http://schemas.openxmlformats.org/package/2006/content-types"');
+            expect(contentTypesXml).not.toContain("xmlns:ns0");
         });
     });
 
     describe("gerarDesenhosDocx", () => {
-        it("deve gerar a minuta de figuras técnicas", async () => {
+        it("deve gerar a minuta de figuras técnicas e embutir a imagem Base64 no pacote DOCX", async () => {
+            // PNG 1x1 transparente válido em Data URL Base64
+            const png1x1Base64 =
+                "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+
             const desenhos: DesenhoItem[] = [
-                { numero_figura: "1", descricao_breve: "Vista frontal" },
-                { numero_figura: "2", descricao_breve: "Diagrama esquemático em blocos" }
+                {
+                    numero_figura: "1",
+                    descricao_breve: "Vista frontal",
+                    imagem_base64: png1x1Base64
+                },
+                {
+                    numero_figura: "2",
+                    descricao_breve: "Diagrama esquemático em blocos",
+                    imagem_base64: null
+                }
             ];
 
             const buffer = await gerarDesenhosDocx(desenhos);
             expect(buffer.length).toBeGreaterThan(1000);
             const zip = new PizZip(buffer);
-            const documentXml = zip.file("word/document.xml")?.asText();
+            const documentXml = zip.file("word/document.xml")?.asText() || "";
+            const relsXml = zip.file("word/_rels/document.xml.rels")?.asText() || "";
+            const mediaFile = zip.file("word/media/figura_1.png");
+
             expect(documentXml).toContain("Figura 1: Vista frontal");
             expect(documentXml).toContain("Figura 2: Diagrama esquemático em blocos");
+            expect(documentXml).toContain('<a:blip r:embed="rIdImg1"/>');
+            expect(relsXml).toContain('Id="rIdImg1"');
+            expect(relsXml).toContain('Target="media/figura_1.png"');
+            expect(mediaFile).toBeDefined();
         });
     });
 });
+
