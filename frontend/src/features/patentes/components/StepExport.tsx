@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { PacotePatentePayload } from "../types/TiposPatentes";
-import { exportarPacotePatenteApi } from "../../../services/PatenteFastApi";
+import { exportarPacotePatenteLocal } from "../../../services/docx";
 import {
     Download,
     FileCheck,
@@ -19,7 +19,6 @@ interface StepExportProps {
 }
 
 export const StepExport: React.FC<StepExportProps> = ({ payload }) => {
-    const [exportarPdf, setExportarPdf] = useState<boolean>(false);
     const [isExportando, setIsExportando] = useState<boolean>(false);
     const [statusMensagem, setStatusMensagem] = useState<{ tipo: "sucesso" | "erro"; texto: string } | null>(null);
 
@@ -64,16 +63,16 @@ export const StepExport: React.FC<StepExportProps> = ({ payload }) => {
         setStatusMensagem(null);
 
         try {
-            await exportarPacotePatenteApi(payload, exportarPdf);
+            await exportarPacotePatenteLocal(payload);
             setStatusMensagem({
                 tipo: "sucesso",
-                texto: "Pacote de minutas oficiais (.zip) gerado e baixado com sucesso!"
+                texto: "Pacote de minutas oficiais (.zip) gerado e baixado com sucesso 100% no seu navegador!"
             });
         } catch (err: any) {
             console.error("Erro ao exportar pacote:", err);
             setStatusMensagem({
                 tipo: "erro",
-                texto: err.message || "Erro inesperado ao gerar os documentos no servidor."
+                texto: err.message || "Erro inesperado ao gerar os documentos localmente."
             });
         } finally {
             setIsExportando(false);
@@ -83,8 +82,8 @@ export const StepExport: React.FC<StepExportProps> = ({ payload }) => {
     const nomeModalidade = isMU
         ? "Modelo de Utilidade (MU)"
         : isCII
-        ? "Patente CII (Software + Hardware)"
-        : "Patente de Invenção (PI)";
+            ? "Patente CII (Software + Hardware)"
+            : "Patente de Invenção (PI)";
 
     return (
         <div className="step-card">
@@ -175,15 +174,11 @@ export const StepExport: React.FC<StepExportProps> = ({ payload }) => {
                     Opções de Geração
                 </h3>
 
-                <label style={{ display: "flex", alignItems: "center", gap: "0.6rem", cursor: "pointer", fontSize: "0.9rem" }}>
-                    <input
-                        type="checkbox"
-                        checked={exportarPdf}
-                        onChange={(e) => setExportarPdf(e.target.checked)}
-                        style={{ width: "18px", height: "18px", cursor: "pointer" }}
-                    />
-                    <span>Incluir também versões em <strong>PDF</strong> convertidas via LibreOffice Headless (além dos arquivos .docx)</span>
-                </label>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", fontSize: "0.9rem", color: "var(--color-text-muted)" }}>
+                    <CheckCircle size={18} color="var(--color-success)" />
+                    <span>Geração local imediata: arquivos <strong>.docx</strong> prontos para edição e protocolo eletrônico no INPI.</span>
+                </div>
+
 
                 {statusMensagem && (
                     <div
