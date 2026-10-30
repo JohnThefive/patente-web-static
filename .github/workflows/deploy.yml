@@ -42,3 +42,18 @@ jobs:
             - name: Deploy to GitHub Pages
               id: deployment
               uses: actions/deploy-pages@v4
+
+            - name: Install dependencies
+              run: |
+                  cd frontend
+                  npm ci || npm install
+
+            - name: Run automated tests
+              run: |
+                  cd frontend
+                  npm test
+
+            - name: Build
+              run: |
+                  cd frontend
+                  npm run build
